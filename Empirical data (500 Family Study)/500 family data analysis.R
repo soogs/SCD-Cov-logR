@@ -1,7 +1,10 @@
 
 # 500 Family data analysis #
 # initiated: 3-may-2021 #
-# last modified (comments and cleaning): 10-may-2021
+# last modified: 20-may-2021
+
+# 20-may-2021 edit:
+# I incorporate the leave-one-out CV for the family dataset, and use the number of correctly classified cases as CV error
 
 # 0. Introduction ####
 # The SCD-Cov-logR method is administered on the 500 family study dataset
@@ -16,14 +19,11 @@ library(psych)
 library(RegularizedSCA)
 library(nFactors)
 
+Rcpp::sourceCpp("./functions/updateW_diffpen.cpp")
 
-setwd("E:\\Users\\park\\Desktop\\Final functions for Github/") # to be changed by user
+source("./functions/scd_cov_logR.R")
 
-Rcpp::sourceCpp("./updateW_diffpen.cpp")
-
-source("./scd_cov_logR.R")
-
-source("./scd_cv.R")
+source("./functions/scd_cv.R")
 
 DS3 = read.spss("E:\\Users\\park\\Desktop\\family data\\04549-0003-Data.sav", to.data.frame = TRUE)  # to be changed by user
 DS4 = read.spss("E:\\Users\\park\\Desktop\\family data\\04549-0004-Data.sav", to.data.frame = TRUE) # to be changed by user
@@ -715,7 +715,23 @@ scdcv1 <- scd_cv(X = X, y = y, R = 2,
 
 scdcv1$cve # 1,29
 
-# logistic regression cv #
+
+# cv using hits as the criterion #
+scdcv1 <- scd_cv(X = X, y = y, R = 2, 
+                 blockcols = blockcols,
+                 alpha = 0.2, 
+                 lasso = rep(10,2), 
+                 glasso = rep(10,2), 
+                 ridge_y = 2,
+                 MAXITER = 10000, 
+                 nrFolds = 58, seed_cv = 7272, seed_method = 111, inits = "rational", include_rational = TRUE, 
+                 type_measure = "hits")
+
+scdcv1$cve # 0.7068
+# 41 out-of-sample families are correctly classified 
+
+
+# logistic regression cv (not reported in the paper) #
 cv.logistic <- glmnet::cv.glmnet(x = X, y = y, family = "binomial", 
                                  type.measure = "deviance", nfolds = 20,
                                  alpha = 1)

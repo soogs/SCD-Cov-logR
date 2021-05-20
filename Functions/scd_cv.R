@@ -1,11 +1,15 @@
 # scdcovlogr_cv  #
 # initiated: 16 march 2021 #
-# last modified: 30 april 2021 #
+# last modified: 20 may 2021 #
 
 # cross validation for scd-cov-logR#
 
 # update 30 april 2021: #
 # I allow for the multistart approach by adding the input "inits", "seed_cv" and "seed_method"
+
+# update 20 may 2021: #
+# I allow for a different CVE criterion: number of cases correctly classified in the test fold
+
 
 scd_cv <- function(X, y, R, alpha, lasso, 
                        glasso, ridge_y, nrFolds, seed_cv, seed_method, inits, include_rational,
@@ -25,7 +29,7 @@ scd_cv <- function(X, y, R, alpha, lasso,
   # seed_method : seed used for the model-fitting. This matters if you want to do multistart; the random starting values are dependent on this
   # include_rational : if the rational start is included as part of the multistart procedure
   # MAXITER: maximum number of iterations
-  # type_measure: the type of measure used for cross validation error. "mse" or "deviance"
+  # type_measure: the type of measure used for cross validation error. "mse", "deviance" or "hit"
   
   set.seed(seed_cv)
   
@@ -98,6 +102,17 @@ scd_cv <- function(X, y, R, alpha, lasso,
       devv <- mean(devv)
       
       cve_k[k,1] <- devv
+      
+    } else if (type_measure == "hits"){
+      prob <- 1 / (1 + exp(-pred))
+      
+      pred_case <- prob >= 0.5
+      
+      hits <- pred_case == y_test
+      
+      hit <- sum(hits)
+      
+      cve_k[k,1] <- hit
       
     } else {stop("no / wrong type measure specified")}
     
